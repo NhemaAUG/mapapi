@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Bus Route Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize map centered on Bhaktapur
+        var map = L.map('map').setView([27.6776, 85.4272], 13); // Bhaktapur coordinates
+
+        // OpenStreetMap Tile Layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Coordinates in [lng, lat] format for ORS
+        const coords = [
+            [85.437104, 27.676305], // Kamalbinayak
+            [85.438317, 27.673491], // Chyamasingh
+            [85.436482, 27.666484], // Jagati
+            [85.42449, 27.665750], // Suryabinayak
+            [85.409826, 27.670505], // Sallaghari
+            [85.403978, 27.672911], // Srijananagar
+            [85.397535, 27.674500], // Radhe Radhe
+            [85.373268, 27.673911], // Gathaghar
+            [85.360230, 27.674702], // Lokanthali
+            [85.349507, 27.679020], // Koteshwor
+
+        ];
+
+        fetch('/api/route', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ coordinates: coords })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.features) {
+                    const routeCoords = data.features[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                    L.polyline(routeCoords, { color: 'blue', weight: 5 }).addTo(map);
+
+                    // Only add markers for the main locations with popups
+                    const markerData = [
+                        { name: "Kamalbinayak", coords: [27.676305, 85.437104] },
+                        { name: "Chyamasingh", coords: [27.673491, 85.438317] },
+                        { name: "Jagati", coords: [27.666484, 85.436482] },
+                        { name: "Suryabinayak", coords: [27.665750, 85.42449] },
+                        { name: "Sallaghari", coords: [27.670505, 85.409826] },
+                        { name: "Srijananagar", coords: [27.672911, 85.403978] },
+                        { name: "Radhe Radhe", coords: [27.674500, 85.397535] },
+                        { name: "Gathaghar", coords: [27.673911, 85.373268] },
+                        { name: "Lokanthali", coords: [27.674702, 85.360230] },
+                        { name: "Koteshwor", coords: [27.679020, 85.349507] }
+                    ];
+
+                    markerData.forEach(function (marker) {
+                        L.marker(marker.coords).addTo(map).bindPopup(marker.name);
+                    });
+
+                    // Example: Replace these coordinates with your bus's real-time GPS coordinates
+                    const busLat = 27.673491; // Example latitude (Chyamasingh)
+                    const busLng = 85.438317; // Example longitude
+
+                    // SVG bus icon as a data URL
+                    const busIcon = L.icon({
+                        iconUrl: 'data:image/svg+xml;utf8,<svg width="40" height="40" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="20" width="48" height="20" rx="6" fill="%23007bff"/><rect x="14" y="26" width="36" height="8" rx="2" fill="white"/><circle cx="18" cy="44" r="4" fill="black"/><circle cx="46" cy="44" r="4" fill="black"/><rect x="28" y="36" width="8" height="4" rx="1" fill="black"/></svg>',
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 35],
+                    });
+
+                    // Add bus marker
+                    const busMarker = L.marker([busLat, busLng], { icon: busIcon }).addTo(map);
+
+                    map.fitBounds(routeCoords);
+                }
+            });
+    </script>
+
+</body>
+
+</html>
